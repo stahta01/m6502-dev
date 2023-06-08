@@ -1,0 +1,70 @@
+# Maintainer: Tim S <stahta01@gmail.com>
+
+_realname=vasm
+_cpu=6502
+_syntax1=oldstyle
+_syntax2=std
+_syntax3=mot
+
+pkgbase=mingw-w64-${_realname}
+pkgname=("${MINGW_PACKAGE_PREFIX}-${_realname}${_cpu}")
+provides=("${MINGW_PACKAGE_PREFIX}-${_realname}")
+conflicts=("${MINGW_PACKAGE_PREFIX}-${_realname}")
+pkgver=1_9d
+pkgrel=1
+pkgdesc="Assembler for the Motorola 6502 and Hitachi 6309 microprocessors (mingw-w64)"
+arch=('any')
+url="http://sun.hasenbraten.de/vasm/"
+license=('custom')
+groups=()
+options=('!strip')
+makedepends=('patch' 'make' "${MINGW_PACKAGE_PREFIX}-gcc")
+source=(
+  "http://phoenix.owl.de/tags/vasm${pkgver}.tar.gz"
+  'LICENSE'
+)
+sha256sums=('0e5d4285bdca8d1db9eae4ea8061788bce603bf5c1f369f070c2218b4915c985'
+            '63b3e08e9a45ce5284263fb2a36cf6880c910b789ceda42781eb298ce8175dca')
+
+prepare() {
+  cd "${_realname}"
+
+  #patch -p1 -i ${srcdir}/001-fix-for-6502-LBEQ-out-of-range-error.patch
+}
+
+build() {
+  cd "${_realname}"
+
+  make clean
+  rm -f obj/*.o
+  make CPU=${_cpu} SYNTAX=${_syntax1}
+  rm -f obj/*.o
+  make CPU=${_cpu} SYNTAX=${_syntax2}
+  rm -f obj/*.o
+  make CPU=${_cpu} SYNTAX=${_syntax3}
+}
+
+package_vasm6502() {
+  cd "${_realname}"
+
+  mkdir -p "$pkgdir${MINGW_PREFIX}/bin/"
+  cp vobjdump.exe "$pkgdir${MINGW_PREFIX}/bin/"
+  cp vasm6502_oldstyle.exe "$pkgdir${MINGW_PREFIX}/bin/"
+  cp vasm6502_std.exe "$pkgdir${MINGW_PREFIX}/bin/"
+  cp vasm6502_mot.exe "$pkgdir${MINGW_PREFIX}/bin/"
+
+  mkdir -p "$pkgdir${MINGW_PREFIX}/share/licenses/${_realname}"
+  install -Dm644 ${srcdir}/LICENSE \
+    "$pkgdir${MINGW_PREFIX}/share/licenses/${_realname}/"
+}
+
+# template start; name=mingw-w64-splitpkg-wrappers; version=1.0;
+# vim: set ft=bash :
+
+# generate wrappers
+for _name in "${pkgname[@]}"; do
+  _short="package_${_name#${MINGW_PACKAGE_PREFIX}-}"
+  _func="$(declare -f "${_short}")"
+  eval "${_func/#${_short}/package_${_name}}"
+done
+# template end;
